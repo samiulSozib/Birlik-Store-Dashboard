@@ -37,6 +37,7 @@ const Category = () => {
         updated_at: ''
     };
 
+
     const [serviceCategoryDialog, setServiceCategoryDialog] = useState(false);
     const [deleteServiceCategoryDialog, setDeleteServiceCategoryDialog] = useState(false);
     const [deleteServiceCategoriesDialog, setDeleteServiceCategoriesDialog] = useState(false);
@@ -261,7 +262,7 @@ const Category = () => {
                         }
                         emptyMessage={t('DATA_TABLE.TABLE.NO_DATA')}
                         dir={isRTL() ? 'rtl' : 'ltr'}
-                        style={{ direction: isRTL() ? 'rtl' : 'ltr' }}
+                        style={{ direction: isRTL() ? 'rtl' : 'ltr',fontFamily: "'iranyekan', sans-serif,iranyekan" }}
                         globalFilter={globalFilter}
                         // header={header}
                         responsiveLayout="scroll"

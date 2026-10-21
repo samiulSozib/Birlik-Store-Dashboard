@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Metadata } from 'next';
 import Layout from '../../layout/layout';
 
@@ -29,7 +30,9 @@ export const metadata: Metadata = {
 
 export default function AppLayout({ children }: AppLayoutProps) {
 
-    return <Layout>
-            {children}
-        </Layout>;
+    return (
+        <Suspense fallback={<div role="status" aria-live="polite" className="p-4">Loading...</div>}>
+            <Layout>{children}</Layout>
+        </Suspense>
+    );
 }

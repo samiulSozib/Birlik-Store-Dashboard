@@ -1,18 +1,15 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
-import React, { useContext } from 'react';
-import AppMenuitem from './AppMenuitem';
-import { LayoutContext } from './context/layoutcontext';
-import { MenuProvider } from './context/menucontext';
-import Link from 'next/link';
 import { AppMenuItem } from '@/types';
+import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import AppMenuitem from './AppMenuitem';
+import { MenuProvider } from './context/menucontext';
 
 const AppMenu = () => {
-    const { layoutConfig } = useContext(LayoutContext);
     const { t } = useTranslation();
 
-    const model: AppMenuItem[] = [
+    const model = useMemo<AppMenuItem[]>(() => [
         {
             label: '',
             icon: 'pi pi-fw pi-th-large',
@@ -243,13 +240,38 @@ const AppMenu = () => {
                     icon: 'pi pi-fw pi-question-circle',
                     to: '/pages/app-providers'
                 },
+                {
+                    label: t('MENU.NOTIFICATION'),
+                    icon: 'pi pi-fw pi-question-circle',
+                    to: '/pages/notification'
+                },
+                {
+                    label: t('MENU.WITHDRAWAL_POLICY'),
+                    icon: 'pi pi-fw pi-question-circle',
+                    to: '/pages/withdrawal-policy'
+                },
+                {
+                    label: t('MENU.WITHDRAWAL_REQUEST'),
+                    icon: 'pi pi-fw pi-question-circle',
+                    to: '/pages/withdrawal-request'
+                },
+                {
+                    label: t('MENU.API_KEYS'),
+                    icon: 'pi pi-fw pi-question-circle',
+                    to: '/pages/api-keys'
+                },
+                {
+                    label: t('TRANSLATION_WORKSPACE'),
+                    icon: 'pi pi-fw pi-question-circle',
+                    to: '/pages/translation-workspace?type=bundle'
+                },
             ]
         }
-    ];
+    ], [t]);
 
     return (
         <MenuProvider>
-            <ul className="layout-menu" style={{
+            {/* <ul className="layout-menu" style={{
                 padding: '0.25rem 0',
                 margin: 0,
                 listStyle: 'none'
@@ -263,9 +285,34 @@ const AppMenu = () => {
                         <li className="menu-separator" style={{ margin: '0.125rem 0' }}></li>
                     );
                 })}
+            </ul> */}
+            <ul
+                className="layout-menu"
+                style={{
+                    padding: '0.25rem 0',
+                    margin: 0,
+                    listStyle: 'none'
+                }}
+            >
+                {model.map((item, i) => {
+                    return !item?.seperator ? (
+                        <AppMenuitem
+                            key={item.label}
+                            item={item}
+                            root={true}
+                            index={i}
+                        />
+                    ) : (
+                        <li
+                            key={`separator-${i}`}
+                            className="menu-separator"
+                            style={{ margin: '0.125rem 0' }}
+                        />
+                    );
+                })}
             </ul>
         </MenuProvider>
     );
 };
 
-export default AppMenu;
+export default memo(AppMenu);

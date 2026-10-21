@@ -2,6 +2,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { AuthenticatedContext } from '../app/(main)/authGuard';
 import { useEventListener, useMountEffect, useUnmountEffect } from 'primereact/hooks';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { classNames } from 'primereact/utils';
@@ -59,7 +60,7 @@ const Layout = ({ children }: ChildContainerProps) => {
     });
 
     const hideMenu = () => {
-        setLayoutState((prevLayoutState: LayoutState) => ({
+        setLayoutState((prevLayoutState: LayoutState) => !prevLayoutState.overlayMenuActive && !prevLayoutState.staticMenuMobileActive && !prevLayoutState.menuHoverActive ? prevLayoutState : ({
             ...prevLayoutState,
             overlayMenuActive: false,
             staticMenuMobileActive: false,
@@ -70,7 +71,7 @@ const Layout = ({ children }: ChildContainerProps) => {
     };
 
     const hideProfileMenu = () => {
-        setLayoutState((prevLayoutState: LayoutState) => ({
+        setLayoutState((prevLayoutState: LayoutState) => !prevLayoutState.profileSidebarVisible ? prevLayoutState : ({
             ...prevLayoutState,
             profileSidebarVisible: false
         }));
@@ -131,13 +132,15 @@ const Layout = ({ children }: ChildContainerProps) => {
             try {
                 const token = localStorage.getItem('api_token');
                 if (!token && pathname !== '/auth/login') {
-                    router.push('/auth/login');
+                    setIsAuthenticated(false);
+                    router.replace('/auth/login');
                 } else {
                     setIsAuthenticated(true);
                 }
             } catch (error) {
                 console.error('Auth check failed:', error);
-                router.push('/auth/login');
+                setIsAuthenticated(false);
+                router.replace('/auth/login');
             }
         };
 
@@ -146,13 +149,13 @@ const Layout = ({ children }: ChildContainerProps) => {
 
     // Don't render anything until auth check is complete
     if (!isAuthenticated && pathname !== '/auth/login') {
-        return null; // or a loading spinner
+        return <div role="status" aria-live="polite" className="p-4">Loading...</div>;
     }
 
 
 
     return (
-        <React.Fragment>
+        <AuthenticatedContext.Provider value={isAuthenticated}>
             <div className={containerClass}>
                 <AppTopbar ref={topbarRef} />
 
@@ -165,7 +168,7 @@ const Layout = ({ children }: ChildContainerProps) => {
                 </div>
                 <div className="layout-mask"></div>
             </div>
-        </React.Fragment>
+        </AuthenticatedContext.Provider>
     );
 };
 

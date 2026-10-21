@@ -1,23 +1,13 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
-import { Menu } from 'primereact/menu';
-import React, { useContext, useEffect, useRef, useState } from 'react';
-import { ProductService } from '../../demo/service/ProductService';
-import { LayoutContext } from '../../layout/context/layoutcontext';
-import { Demo } from '@/types';
-import { ChartData, ChartOptions } from 'chart.js';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { fetchDashboardData } from '../redux/actions/dashboardActions';
 import { useSelector } from 'react-redux';
 import { Divider } from 'primereact/divider';
-import { _fetchCountries } from '../redux/actions/countriesActions';
-import { _fetchTelegramList } from '../redux/actions/telegramActions';
-import { _fetchCompanies } from '../redux/actions/companyActions';
 import { AppDispatch } from '../redux/store';
-import { _fetchPurchasedProducts } from '../redux/actions/purchasedProductsActions';
 import withAuth from './authGuard';
 import { useTranslation } from 'react-i18next';
-import { _fetchPaymentTypes } from '../redux/actions/paymentTypeActions';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
@@ -40,10 +30,8 @@ interface FilterParams {
 }
 
 const Dashboard = () => {
-    const { layoutConfig } = useContext(LayoutContext);
     const { data } = useSelector((state: any) => state.dashboardDataReducer);
     const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
-    const [lineOptions, setLineOptions] = useState<ChartOptions>({});
     const { t } = useTranslation();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -56,7 +44,14 @@ const Dashboard = () => {
         from_date: null as string | null,
         to_date: null as string | null
     });
-    const [activeFilters, setActiveFilters] = useState<FilterParams>({});
+    const serviceId = searchParams.get('filter_service_id');
+    const fromDate = searchParams.get('from_date');
+    const toDate = searchParams.get('to_date');
+    const activeFilters = useMemo<FilterParams>(() => ({
+        ...(serviceId ? { filter_service_id: serviceId } : {}),
+        ...(fromDate ? { from_date: fromDate } : {}),
+        ...(toDate ? { to_date: toDate } : {})
+    }), [serviceId, fromDate, toDate]);
     const [showFilters, setShowFilters] = useState(false);
     const filterRef = useRef<HTMLDivElement>(null);
     const [showQuickActions, setShowQuickActions] = useState(false);
@@ -64,44 +59,20 @@ const Dashboard = () => {
 
     const { services } = useSelector((state: any) => state.serviceReducer);
 
-    // Initialize filters from URL parameters on component mount
     useEffect(() => {
-        const urlFilters: FilterParams = {};
-
-        const serviceId = searchParams.get('filter_service_id');
-        const fromDate = searchParams.get('from_date');
-        const toDate = searchParams.get('to_date');
-
-        if (serviceId) {
-            urlFilters.filter_service_id = serviceId;
-            setFilters(prev => ({ ...prev, filter_service_id: parseInt(serviceId) }));
-        }
-        if (fromDate) {
-            urlFilters.from_date = fromDate;
-            setFilters(prev => ({ ...prev, from_date: fromDate }));
-        }
-        if (toDate) {
-            urlFilters.to_date = toDate;
-            setFilters(prev => ({ ...prev, to_date: toDate }));
-        }
-
-        setActiveFilters(urlFilters);
-    }, [searchParams]);
+        setFilters({
+            filter_service_id: serviceId ? parseInt(serviceId, 10) : null,
+            from_date: fromDate,
+            to_date: toDate
+        });
+    }, [serviceId, fromDate, toDate]);
 
     useEffect(() => {
-        dispatch(fetchDashboardData());
-        dispatch(_fetchPurchasedProducts());
-        dispatch(_fetchServiceList()); // Fetch services for dropdown
+        dispatch(_fetchServiceList());
     }, [dispatch]);
 
     useEffect(() => {
-        // Fetch data with active filters (which now come from URL)
-        //if (Object.keys(activeFilters).length > 0) {
-            dispatch(fetchDashboardData(activeFilters));
-        //} else {
-            // If no active filters, fetch default data
-            //dispatch(fetchDashboardData());
-        //}
+        dispatch(fetchDashboardData(activeFilters));
     }, [activeFilters, dispatch]);
 
     useEffect(() => {
@@ -118,76 +89,6 @@ const Dashboard = () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [filterDialogVisible]);
-
-    const applyLightTheme = () => {
-        const lineOptions: ChartOptions = {
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#495057'
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    ticks: {
-                        color: '#495057'
-                    },
-                    grid: {
-                        color: '#ebedef'
-                    }
-                },
-                y: {
-                    ticks: {
-                        color: '#495057'
-                    },
-                    grid: {
-                        color: '#ebedef'
-                    }
-                }
-            }
-        };
-        setLineOptions(lineOptions);
-    };
-
-    const applyDarkTheme = () => {
-        const lineOptions = {
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#ebedef'
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    ticks: {
-                        color: '#ebedef'
-                    },
-                    grid: {
-                        color: 'rgba(160, 167, 181, .3)'
-                    }
-                },
-                y: {
-                    ticks: {
-                        color: '#ebedef'
-                    },
-                    grid: {
-                        color: 'rgba(160, 167, 181, .3)'
-                    }
-                }
-            }
-        };
-        setLineOptions(lineOptions);
-    };
-
-    useEffect(() => {
-        if (layoutConfig.colorScheme === 'light') {
-            applyLightTheme();
-        } else {
-            applyDarkTheme();
-        }
-    }, [layoutConfig.colorScheme]);
 
     const formatCurrency = (value: number) => {
         return value?.toLocaleString('en-US', {

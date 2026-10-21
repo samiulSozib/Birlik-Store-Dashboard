@@ -86,7 +86,10 @@ const ResellerPage = () => {
         max_loan_balance_request_amount: 0,
         min_loan_balance_request_amount: 0,
         reseller_identity_attachment: '',
-        extra_optional_proof: ''
+        extra_optional_proof: '',
+        afg_custom_recharge_adjust_type: 'decrease',
+        afg_custom_recharge_adjust_mode: 'fixed',
+        afg_custom_recharge_adjust_value: 0
     };
 
     const [resellerDialog, setResellerDialog] = useState(false);
@@ -113,7 +116,9 @@ const ResellerPage = () => {
     const [filters, setFilters] = useState({
         filter_status: null as string | null,
         filter_startdate: null as string | null,
-        filter_enddate: null as string | null
+        filter_enddate: null as string | null,
+        filter_has_loan: null as string | null // Add this line
+
     });
     const [activeFilters, setActiveFilters] = useState({});
     const [refreshing, setRefreshing] = useState(false);
@@ -121,12 +126,23 @@ const ResellerPage = () => {
 
     useEffect(() => {
         dispatch(_fetchResellers(1, searchTag, activeFilters));
+        // dispatch(_fetchCountries());
+        // dispatch(_fetchDistricts());
+        // dispatch(_fetchProvinces());
+        // dispatch(_fetchCurrencies());
+        // dispatch(_fetchResellerGroups());
+    }, [dispatch, searchTag, activeFilters]);
+
+useEffect(() => {
+    if (resellerDialog) {
+        // Fetch all required data for dropdowns
         dispatch(_fetchCountries());
         dispatch(_fetchDistricts());
         dispatch(_fetchProvinces());
         dispatch(_fetchCurrencies());
         dispatch(_fetchResellerGroups());
-    }, [dispatch, searchTag, activeFilters]);
+    }
+}, [resellerDialog, dispatch]);
 
     // Add this useEffect for click outside detection
     useEffect(() => {
@@ -381,6 +397,22 @@ const ResellerPage = () => {
                                             style={{ width: '100%' }}
                                         />
                                     </div>
+                                    {/* <div className="col-12">
+                                        <label htmlFor="loanFilter" style={{ fontSize: '0.875rem' }}>
+                                            {t('RESELLER.TABLE.COLUMN.LOANAMOUNT')}
+                                        </label>
+                                        <Dropdown
+                                            id="loanFilter"
+                                            options={[
+                                                { label: t('HAS_LOAN'), value: '1' },
+                                                { label: t('NO_LOAN'), value: '0' }
+                                            ]}
+                                            value={filters.filter_has_loan}
+                                            onChange={(e) => setFilters({ ...filters, filter_has_loan: e.value })}
+                                            placeholder={t('SELECT_LOAN_STATUS')}
+                                            style={{ width: '100%' }}
+                                        />
+                                    </div> */}
                                     <div className="col-12">
                                         <label htmlFor="startDateFilter" style={{ fontSize: '0.875rem' }}>
                                             {t('START_DATE')}
@@ -402,7 +434,8 @@ const ResellerPage = () => {
                                                 setFilters({
                                                     filter_status: null,
                                                     filter_startdate: null,
-                                                    filter_enddate: null
+                                                    filter_enddate: null,
+                                                    filter_has_loan: null
                                                 });
                                             }}
                                         />
@@ -568,7 +601,7 @@ const ResellerPage = () => {
         return (
             <>
                 <span className="p-column-title">Loan Amount</span>
-                <span style={{ color: 'red' }}>{loanAmount}</span>
+                <span style={{ color: 'red' }}>{loanAmount > 0 ? loanAmount : 0}</span>
             </>
         );
     };
@@ -1261,6 +1294,73 @@ const ResellerPage = () => {
                                         className={classNames({
                                             'p-invalid': submitted && !reseller.min_loan_balance_request_amount
                                         })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className='formgrid grid'>
+                                <div className="field col">
+                                    <label htmlFor="afg_custom_recharge_adjust_type" style={{ fontWeight: 'bold' }}>
+                                        {t('RECHARGE_ADJUST_TYPE')}
+                                    </label>
+                                    <Dropdown
+                                        id="afg_custom_recharge_adjust_type"
+                                        value={reseller.afg_custom_recharge_adjust_type}
+                                        options={[
+                                            { label: t('DECREASE'), value: 'decrease' },
+                                            { label: t('INCREASE'), value: 'increase' }
+                                        ]}
+                                        onChange={(e) =>
+                                            setReseller((prev) => ({
+                                                ...prev,
+                                                afg_custom_recharge_adjust_type: e.value
+                                            }))
+                                        }
+                                        optionLabel="label"
+                                        optionValue="value"
+                                        placeholder={t('SELECT_ADJUST_TYPE')}
+                                        className="w-full"
+                                    />
+                                </div>
+
+                                <div className="field col">
+                                    <label htmlFor="afg_custom_recharge_adjust_mode" style={{ fontWeight: 'bold' }}>
+                                        {t('RECHARGE_ADJUST_MODE')}
+                                    </label>
+                                    <Dropdown
+                                        id="afg_custom_recharge_adjust_mode"
+                                        value={reseller.afg_custom_recharge_adjust_mode}
+                                        options={[
+                                            { label: t('PERCENTAGE'), value: 'percentage' },
+                                            { label: t('FIXED'), value: 'fixed' }
+                                        ]}
+                                        onChange={(e) =>
+                                            setReseller((prev) => ({
+                                                ...prev,
+                                                afg_custom_recharge_adjust_mode: e.value
+                                            }))
+                                        }
+                                        optionLabel="label"
+                                        optionValue="value"
+                                        placeholder={t('SELECT_ADJUST_MODE')}
+                                        className="w-full"
+                                    />
+                                </div>
+
+                                <div className="field col">
+                                    <label htmlFor="afg_custom_recharge_adjust_value" style={{ fontWeight: 'bold' }}>
+                                        {t('RECHARGE_ADJUST_VALUE')}
+                                    </label>
+                                    <InputText
+                                        id="afg_custom_recharge_adjust_value"
+                                        value={reseller.afg_custom_recharge_adjust_value?.toString() || ''}
+                                        onChange={(e) =>
+                                            setReseller((prev) => ({
+                                                ...prev,
+                                                afg_custom_recharge_adjust_value: parseFloat(e.target.value) || 0
+                                            }))
+                                        }
+                                        placeholder={t('ENTER_ADJUST_VALUE')}
                                     />
                                 </div>
                             </div>

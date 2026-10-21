@@ -1,57 +1,37 @@
-// import { useRouter } from 'next/navigation';
-// import { useEffect } from 'react';
-// import { useSelector } from 'react-redux';
-
-// const withAuth = (WrappedComponent: React.ComponentType) => {
-//   const AuthComponent = (props: any) => {
-//     const router = useRouter();
-//     const {isAuthenticated} = useSelector((state: any) => state.authReducer);
-
-//     useEffect(() => {
-//       const token = localStorage.getItem('api_token'); // Replace with your actual auth check
-
-//       if (!token || !isAuthenticated) {
-//         router.replace('/auth/login'); // Redirect to login if not authenticated
-//       }
-//     }, [router, isAuthenticated]);
-
-//     return <WrappedComponent {...props} />;
-//   };
-
-//   return AuthComponent;
-// };
-
-// export default withAuth;
-
-
+'use client';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { createContext, useContext, useEffect, useState } from 'react';
+import type { ComponentType } from 'react';
 
-const withAuth = (WrappedComponent: React.ComponentType) => {
-  const AuthComponent = (props: any) => {
-    const router = useRouter();
-    const isAuthenticated = useSelector((state: any) => state.authReducer.isAuthenticated);
-    const [isCheckingAuth, setIsCheckingAuth] = useState(true); // Loading state
+// The protected layout supplies its completed check to all page guards.
+export const AuthenticatedContext = createContext(false);
 
-    useEffect(() => {
-      const token = localStorage.getItem('api_token');
+const withAuth = (WrappedComponent: ComponentType) => {
+    const AuthComponent = (props: any) => {
+        const router = useRouter();
+        const authenticatedByLayout = useContext(AuthenticatedContext);
+        const [authenticatedLocally, setAuthenticatedLocally] = useState(false);
 
-      if (token) {
-        setIsCheckingAuth(false); // Authentication valid হলে লোডিং বন্ধ
-      } else {
-        router.replace('/auth/login'); // Redirect only if no token & not authenticated
-      }
-    }, [router]);
+        useEffect(() => {
+            if (authenticatedByLayout) return;
+            try {
+                if (localStorage.getItem('api_token')) {
+                    setAuthenticatedLocally(true);
+                    return;
+                }
+            } catch {
+                // Storage access may be unavailable.
+            }
+            router.replace('/auth/login');
+        }, [authenticatedByLayout, router]);
 
-    if (isCheckingAuth) {
-      return <div>Loading...</div>; // Prevent unnecessary logout during initial load
-    }
-
-    return <WrappedComponent {...props} />;
-  };
-
-  return AuthComponent;
+        if (!authenticatedByLayout && !authenticatedLocally) {
+            return <div role="status" aria-live="polite">Loading...</div>;
+        }
+        return <WrappedComponent {...props} />;
+    };
+    AuthComponent.displayName = `withAuth(${WrappedComponent.displayName || WrappedComponent.name || 'Component'})`;
+    return AuthComponent;
 };
 
 export default withAuth;

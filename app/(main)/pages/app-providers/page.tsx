@@ -1,30 +1,30 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
+import { _addProvider, _deleteProvider, _deleteSelectedProviders, _editProvider, _fetchProviders, _toggleProvider } from '@/app/redux/actions/providerActions';
+import { AppDispatch } from '@/app/redux/store';
+import i18n from '@/i18n';
+import { Provider } from '@/types/interface';
+import { useRouter } from 'next/navigation';
+import { Accordion, AccordionTab } from 'primereact/accordion';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dialog } from 'primereact/dialog';
+import { Dropdown } from 'primereact/dropdown';
+import { InputSwitch } from 'primereact/inputswitch';
 import { InputText } from 'primereact/inputtext';
+import { MultiSelect } from 'primereact/multiselect';
+import { Paginator } from 'primereact/paginator';
+import { ProgressBar } from 'primereact/progressbar';
 import { Toast } from 'primereact/toast';
 import { Toolbar } from 'primereact/toolbar';
 import { classNames } from 'primereact/utils';
 import React, { useEffect, useRef, useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { useSelector } from 'react-redux';
-import { Dropdown } from 'primereact/dropdown';
-import { Paginator } from 'primereact/paginator';
-import { AppDispatch } from '@/app/redux/store';
-import { ProgressBar } from 'primereact/progressbar';
-import withAuth from '../../authGuard';
 import { useTranslation } from 'react-i18next';
+import { useDispatch, useSelector } from 'react-redux';
+import withAuth from '../../authGuard';
 import { customCellStyle } from '../../utilities/customRow';
-import i18n from '@/i18n';
 import { isRTL } from '../../utilities/rtlUtil';
-import { _fetchProviders, _addProvider, _editProvider, _deleteProvider, _deleteSelectedProviders, _toggleProvider } from '@/app/redux/actions/providerActions';
-import { Provider } from '@/types/interface';
-import { InputSwitch } from 'primereact/inputswitch';
-import { MultiSelect } from 'primereact/multiselect';
-import { Accordion, AccordionTab } from 'primereact/accordion';
 
 const ProviderPage = () => {
     let emptyProvider: Provider = {
@@ -87,12 +87,18 @@ const ProviderPage = () => {
     const [newCredentialKey, setNewCredentialKey] = useState('');
     const [newCredentialValue, setNewCredentialValue] = useState('');
 
+    const router = useRouter();
+
+
     const capabilityOptions = [
         { label: t('PROVIDER.CAPABILITIES.TOPUP'), value: 'topup' },
         { label: t('PROVIDER.CAPABILITIES.INTERNET'), value: 'internet' },
         { label: t('PROVIDER.CAPABILITIES.BILL'), value: 'bill' },
         { label: t('PROVIDER.CAPABILITIES.CREDIT'), value: 'credit' },
-        { label: t('PROVIDER.CAPABILITIES.PRODUCTS'), value: 'products' }
+        { label: t('PROVIDER.CAPABILITIES.PRODUCTS'), value: 'products' },
+        { label: t('PROVIDER.CAPABILITIES.VOICE_BUNDLES'), value: 'voice' },
+        { label: t('PROVIDER.CAPABILITIES.SMS_BUNDLES'), value: 'sms' }
+
     ];
 
 
@@ -452,6 +458,7 @@ const ProviderPage = () => {
 
                                         {/* Action Buttons */}
                                         <div className="col-12 mt-3 flex justify-content-between gap-2">
+
                                             <Button
                                                 label={t('RESET')}
                                                 icon="pi pi-times"
@@ -491,14 +498,61 @@ const ProviderPage = () => {
         );
     };
 
+    // const leftToolbarTemplate = () => {
+    //     return (
+    //         <div className="flex items-center">
+    //             <span className="block mt-2 md:mt-0 p-input-icon-left w-full md:w-auto">
+    //                 <i className="pi pi-search" />
+    //                 <InputText type="search" onInput={(e) => setSearchTag(e.currentTarget.value)} placeholder={t('ECOMMERCE.COMMON.SEARCH')} className="w-full md:w-auto" />
+    //             </span>
+    //         </div>
+    //     );
+    // };
+    const [localSearchTerm, setLocalSearchTerm] = useState('');
+
     const leftToolbarTemplate = () => {
+
+        const handleSearch = () => {
+            setSearchTag(localSearchTerm);
+        };
+
+        const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === 'Enter') {
+                handleSearch();
+            }
+        };
+
         return (
-            <div className="flex items-center">
-                <span className="block mt-2 md:mt-0 p-input-icon-left w-full md:w-auto">
-                    <i className="pi pi-search" />
-                    <InputText type="search" onInput={(e) => setSearchTag(e.currentTarget.value)} placeholder={t('ECOMMERCE.COMMON.SEARCH')} className="w-full md:w-auto" />
-                </span>
-            </div>
+            <React.Fragment>
+                <div className="flex align-items-center gap-2">
+                    <span className="p-input-icon-left">
+                        <i className="pi pi-search" />
+                        <InputText
+                            type="search"
+                            value={localSearchTerm}
+                            onChange={(e) => setLocalSearchTerm(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            placeholder={t('ECOMMERCE.COMMON.SEARCH')}
+                        />
+                    </span>
+                    <Button
+                        label={t('SEARCH')}
+                        onClick={handleSearch}
+                        className="p-button-sm"
+                    />
+                    {localSearchTerm && (
+                        <Button
+                            icon="pi pi-times"
+                            onClick={() => {
+                                setLocalSearchTerm('');
+                                setSearchTag('');
+                            }}
+                            className="p-button-sm p-button-secondary p-button-text"
+
+                        />
+                    )}
+                </div>
+            </React.Fragment>
         );
     };
 
@@ -598,6 +652,13 @@ const ProviderPage = () => {
     const actionBodyTemplate = (rowData: Provider) => {
         return (
             <>
+                <Button
+                    icon="pi pi-eye"
+                    rounded
+                    severity="info"
+                    className={['ar', 'fa', 'ps', 'bn'].includes(i18n.language) ? 'ml-2' : 'mr-2'}
+                    onClick={() => router.push(`/pages/app-providers/view/${rowData.id}`)}
+                />
                 <Button icon="pi pi-pencil" rounded severity="success" className={['ar', 'fa', 'ps', 'bn'].includes(i18n.language) ? 'ml-2' : 'mr-2'} onClick={() => editProvider(rowData)} />
                 <Button icon="pi pi-trash" rounded severity="warning" onClick={() => confirmDeleteProvider(rowData)} />
             </>
